@@ -1,13 +1,17 @@
 /*
   코드 챌린지
 
-    1. 마지막으로 시작한 곳 기억하기( travel, work 모드를 기억하고 앱 재시작시 이어서 시작)
-    2. 삭제가 아닌 완료 버튼과 완료 효과 구현하기 [mutate 쓰지않기]
+    1. (완)마지막으로 시작한 곳 기억하기( travel, work 모드를 기억하고 앱 재시작시 이어서 시작)
+    2. (완)삭제가 아닌 완료 버튼과 완료 효과 구현하기 [mutate 쓰지않기]
     3. 유저가 text를 수정할 수 있게하기
+
+    3번 알고리즘
+      수정 버튼을 누르면
+      텍스트를 
     
-    내가 어디있는지 기억하기
-    완료표시
     완료, 수정, 삭제 버튼 및 기능 구현
+    버튼추가완료
+    함수작성중
 */
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -31,6 +35,7 @@ export default function App() {
   const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
   const [toDos, setToDos] = useState({});
+  const [checkBox, setCheckBox] = useState(false);
   useEffect(() => {
     loadStatus();
     loadToDos();
@@ -54,7 +59,6 @@ export default function App() {
       setWorking(true);
     }
   };
-
   const saveToDos = async (toSave) => {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   };
@@ -64,7 +68,6 @@ export default function App() {
       setToDos(JSON.parse(s));
     }
   };
-
   const addToDo = async () => {
     if (text === "") {
       return;
@@ -72,13 +75,12 @@ export default function App() {
     //save to do
     const newToDos = {
       ...toDos,
-      [Date.now()]: { text, working },
+      [Date.now()]: { text, working, checkBox },
     };
     setToDos(newToDos);
     await saveToDos(newToDos);
     setText("");
   };
-
   const deleteTodo = (key) => {
     if (Platform.OS === "web") {
       const ok = confirm("Delete To do?");
@@ -104,6 +106,16 @@ export default function App() {
     }
     return;
   };
+  const checkTodo = async (key) => {
+    const newToDos = { ...toDos };
+    newToDos[key].checkBox = !newToDos[key].checkBox;
+    setToDos(newToDos);
+    setCheckBox(!checkBox);
+    await saveToDos(newToDos);
+    console.log(newToDos[key].checkBox);
+    return;
+  };
+  const modifyTodo = async (key) => {};
 
   return (
     <View style={styles.container}>
@@ -116,6 +128,7 @@ export default function App() {
             Work
           </Text>
         </TouchableOpacity>
+
         <TouchableOpacity onPress={travel}>
           <Text
             style={{
@@ -139,10 +152,38 @@ export default function App() {
         {Object.keys(toDos).map((key) =>
           toDos[key].working === working ? (
             <View style={styles.toDo} key={key}>
-              <Text style={styles.toDoText}>{toDos[key].text}</Text>
-              <TouchableOpacity onPress={() => deleteTodo(key)}>
-                <Fontisto name="trash" size={20} color={theme.grey} />
-              </TouchableOpacity>
+              <Text
+                style={
+                  toDos[key].checkBox ? styles.toDoText : styles.toDoTextChecked
+                }
+              >
+                {toDos[key].text}
+              </Text>
+              <Text style={styles.toDoIcon}>
+                <TouchableOpacity onPress={() => checkTodo(key)}>
+                  {toDos[key].checkBox ? (
+                    <Fontisto
+                      name="checkbox-passive"
+                      size={20}
+                      color={theme.grey}
+                    />
+                  ) : (
+                    <Fontisto
+                      name="checkbox-active"
+                      size={20}
+                      color={theme.grey}
+                    />
+                  )}
+                </TouchableOpacity>
+                {"    "}
+                <TouchableOpacity onPress={() => modifyTodo(key)}>
+                  <Fontisto name="scissors" size={20} color={theme.grey} />
+                </TouchableOpacity>
+                {"    "}
+                <TouchableOpacity onPress={() => deleteTodo(key)}>
+                  <Fontisto name="trash" size={20} color={theme.grey} />
+                </TouchableOpacity>
+              </Text>
             </View>
           ) : null
         )}
@@ -150,6 +191,7 @@ export default function App() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -184,6 +226,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   toDoText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  toDoTextChecked: {
+    color: "grey",
+    fontSize: 16,
+    fontWeight: "500",
+    textDecorationLine: "line-through",
+  },
+  toDoIcon: {
     color: "white",
     fontSize: 16,
     fontWeight: "500",
